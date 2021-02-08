@@ -16,18 +16,49 @@ func NewUserManagementRepo(database *pg.DB) user_management.IUserManagementRepo 
 	return &UserManagementRepo{database}
 }
 
-func (r *UserManagementRepo) InsertRoleDB(traceId string, dataRole model.TableRoles) error {
+func (r *UserManagementRepo) GetRolesDB(uniqID string) (*[]model.TableRoles, int, error) {
+	var (
+		dataRoles []model.TableRoles
+		totalData int
+	)
+
+	totalData, err := r.database.Model(&dataRoles).SelectAndCount()
+	if err != nil {
+		log.Error(err, uniqID)
+		return nil, totalData, err
+	}
+	return &dataRoles, totalData, nil
+}
+
+func (r *UserManagementRepo) InsertRoleDB(uniqID string, dataRole model.TableRoles) error {
 	_, err := r.database.Model(&dataRole).Insert()
 	if err != nil {
-		log.Error(err, traceId)
+		log.Error(err, uniqID)
 	}
 	return err
 }
 
-func (r *UserManagementRepo) InsertUserDB(traceId string, dataUser model.TableUsers) error {
-	_, err := r.database.Model(&dataUser).Insert()
-	if err != nil {
-		log.Error(err, traceId)
+func (r *UserManagementRepo) GetUsersDB(uniqID string, params model.ParamsUsers) (*[]model.TableUsers,
+	int, error) {
+	var (
+		dataUsers               []model.TableUsers
+		totalData, handlingPage int
+	)
+
+	if params.Page == 0 {
+		handlingPage = 0
+	} else {
+		handlingPage = (params.Page - 1) * params.Limit
 	}
-	return err
+
+	totalData, err := r.database.Model(&dataUsers).
+		Limit(params.Limit).
+		Offset(handlingPage).
+		Relation("Roles").
+		SelectAndCount()
+	if err != nil {
+		log.Error(err, uniqID)
+		return nil, totalData, err
+	}
+	return &dataUsers, totalData, nil
 }

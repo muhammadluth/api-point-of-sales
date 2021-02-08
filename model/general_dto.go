@@ -6,6 +6,24 @@ type (
 		Message string `json:"message"`
 	}
 
+	ResponseDropdown struct {
+		Label string `json:"label"`
+		Value string `json:"value"`
+	}
+
+	ResponseSuccessWithoutPagination struct {
+		TotalData int         `json:"total_data"`
+		Data      interface{} `json:"data"`
+	}
+
+	ResponseSuccessWithPagination struct {
+		TotalData int         `json:"total_data"`
+		TotalPage int         `json:"total_page"`
+		Limit     int         `json:"limit"`
+		Page      int         `json:"page"`
+		Data      interface{} `json:"data"`
+	}
+
 	DataUser struct {
 		UserID      string   `json:"user_id"`
 		FirstName   string   `json:"first_name"`
@@ -21,14 +39,11 @@ type (
 		RoleName    string `json:"role_name"`
 		Description string `json:"description"`
 	}
+)
 
-	PayloadToken struct {
-		Jti string `json:"jti"`
-		Iss string `json:"iss"`
-		Sub string `json:"sub"`
-		Aud string `json:"aud"`
-		Exp int64  `json:"exp"`
-		Nbf int64  `json:"nbf"`
-		Iat int64  `json:"iat"`
+type (
+	ParamsUsers struct {
+		Limit int `query:"limit"`
+		Page  int `query:"page"`
 	}
 )

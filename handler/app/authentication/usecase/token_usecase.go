@@ -29,14 +29,14 @@ func NewTokenUsecase(expireAccessToken time.Duration, expireRefreshToken time.Du
 		iAuthenticationMapper}
 }
 
-func (u *TokenUsecase) CreateToken(traceId string, dataUser model.DataUser, ctx *fiber.Ctx) error {
+func (u *TokenUsecase) CreateToken(uniqId string, dataUser model.DataUser, ctx *fiber.Ctx) error {
 	jwtID, issuer, subject, audiens, issuedAt, expireAccessToken, expireRefreshToken := u.doGeneratePayloadJwt(dataUser, ctx)
 	payloadAccessToken := u.iAuthenticationMapper.ToPayloadToken(jwtID, subject, issuer, audiens, issuedAt, expireAccessToken)
 	payloadRefreshToken := u.iAuthenticationMapper.ToPayloadToken(jwtID, subject, issuer, audiens, issuedAt, expireRefreshToken)
 
-	strAccessToken, strRefreshToken, err := u.doCreateToken(traceId, payloadAccessToken, payloadRefreshToken)
+	strAccessToken, strRefreshToken, err := u.doCreateToken(uniqId, payloadAccessToken, payloadRefreshToken)
 	if err != nil {
-		log.Error(err, traceId)
+		log.Error(err, uniqId)
 		return err
 	}
 
@@ -53,29 +53,29 @@ func (u *TokenUsecase) CreateToken(traceId string, dataUser model.DataUser, ctx 
 	return err
 }
 
-func (u *TokenUsecase) CheckToken(traceId, accessToken string, ctx *fiber.Ctx) (jwt.StandardClaims, int, error) {
+func (u *TokenUsecase) CheckToken(uniqId, accessToken string, ctx *fiber.Ctx) (jwt.StandardClaims, int, error) {
 	claims := new(jwt.StandardClaims)
 	token, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
 		return u.publicKey, nil
 	})
 	if err != nil {
-		log.Error(err, traceId)
+		log.Error(err, uniqId)
 		return *claims, fiber.StatusUnauthorized, err
 	}
 	if token.Valid {
 		if claims.ExpiresAt < time.Now().Unix() {
-			return *claims, fiber.StatusUnauthorized, errors.New("Token expired")
+			return *claims, fiber.StatusUnauthorized, errors.New("Token Expired")
 		}
 	} else if ve, ok := err.(*jwt.ValidationError); ok {
 		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-			return *claims, fiber.StatusForbidden, errors.New("Token has no access")
+			return *claims, fiber.StatusForbidden, errors.New("Token Has No Access")
 		} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			return *claims, fiber.StatusUnauthorized, errors.New("Token invalid")
+			return *claims, fiber.StatusUnauthorized, errors.New("Token Invalid")
 		} else {
-			return *claims, fiber.StatusUnauthorized, errors.New("Token invalid")
+			return *claims, fiber.StatusUnauthorized, errors.New("Token Invalid")
 		}
 	} else {
-		return *claims, fiber.StatusUnauthorized, errors.New("Token invalid")
+		return *claims, fiber.StatusUnauthorized, errors.New("Token Invalid")
 	}
 	return *claims, fiber.StatusOK, nil
 }
@@ -93,7 +93,7 @@ func (u *TokenUsecase) doGeneratePayloadJwt(dataUser model.DataUser, ctx *fiber.
 	return jwtID, issuer, subject, audiens, issuedAt, expireAccessToken, expireRefreshToken
 }
 
-func (u *TokenUsecase) doCreateToken(traceId string, payloadAccessToken,
+func (u *TokenUsecase) doCreateToken(uniqId string, payloadAccessToken,
 	payloadRefreshToken jwt.StandardClaims) (strAccessToken string, strRefreshToken string, err error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodRS256, payloadAccessToken)
 	strAccessToken, err = accessToken.SignedString(u.privateKey)

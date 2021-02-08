@@ -21,14 +21,22 @@ func NewMiddleware(iTokenUsecase authentication.ITokenUsecase) Middleware {
 func (m *Middleware) AuthMiddleware() func(*fiber.Ctx) error {
 	return func(ctx *fiber.Ctx) error {
 		var (
-			traceId       = util.CreateTraceID()
+			traceId       = util.CreateUniqID()
 			authorization = ctx.Get("Authorization")
 		)
+
+		ctx.Set("X-XSS-Protection", "1; mode=block")
+		ctx.Set("X-Content-Type-Options", "nosniff")
+		ctx.Set("X-Download-Options", "noopen")
+		ctx.Set("Strict-Transport-Security", "max-age=5184000")
+		ctx.Set("X-Frame-Options", "SAMEORIGIN")
+		ctx.Set("X-DNS-Prefetch-Control", "off")
+
 		splitAuthorization := strings.Split(authorization, " ")
 		if len(splitAuthorization) != 2 {
 			return ctx.Status(fiber.StatusUnauthorized).JSON(model.ResponseHTTP{
 				Status:  constant.ERROR,
-				Message: "Token invalid",
+				Message: "Token Invalid",
 			})
 		}
 
@@ -40,12 +48,14 @@ func (m *Middleware) AuthMiddleware() func(*fiber.Ctx) error {
 			})
 		}
 
-		ctx.Set("X-XSS-Protection", "1; mode=block")
-		ctx.Set("X-Content-Type-Options", "nosniff")
-		ctx.Set("X-Download-Options", "noopen")
-		ctx.Set("Strict-Transport-Security", "max-age=5184000")
-		ctx.Set("X-Frame-Options", "SAMEORIGIN")
-		ctx.Set("X-DNS-Prefetch-Control", "off")
+		if strings.Title(claims.Audience) == strings.Title(constant.ROLE_USER) &&
+			strings.ToUpper(ctx.Method()) != strings.ToUpper(constant.METHOD_GET) {
+			return ctx.Status(fiber.StatusForbidden).JSON(model.ResponseHTTP{
+				Status:  constant.ERROR,
+				Message: "Your Role Does Not Have Access",
+			})
+		}
+
 		ctx.Locals("id", claims.Id)
 		return ctx.Next()
 	}

@@ -19,9 +19,26 @@ func NewRoleUsecase(iUserManagementMapper user_management.IUserManagementMapper,
 	return &RoleUsecase{iUserManagementMapper, iUserManagementRepo}
 }
 
+func (u *RoleUsecase) GetRoles(ctx *fiber.Ctx) error {
+	var uniqID = util.CreateUniqID()
+
+	dataRoles, totalData, err := u.iUserManagementRepo.GetRolesDB(uniqID)
+	if err != nil {
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.ResponseHTTP{
+			Status:  constant.ERROR,
+			Message: "Error Retrieve Data Role",
+		})
+	}
+	response := u.iUserManagementMapper.ToGetRolePayload(*dataRoles)
+	return ctx.JSON(model.ResponseSuccessWithoutPagination{
+		TotalData: totalData,
+		Data:      *response,
+	})
+}
+
 func (u *RoleUsecase) CreateRole(ctx *fiber.Ctx) error {
 	var (
-		traceId = util.CreateTraceID()
+		uniqID  = util.CreateUniqID()
 		request model.RequestCreateRole
 	)
 	if err := ctx.BodyParser(&request); err != nil {
@@ -31,7 +48,7 @@ func (u *RoleUsecase) CreateRole(ctx *fiber.Ctx) error {
 		})
 	}
 	dataRole := u.iUserManagementMapper.ToCreateRolePayload(request)
-	if err := u.iUserManagementRepo.InsertRoleDB(traceId, dataRole); err != nil {
+	if err := u.iUserManagementRepo.InsertRoleDB(uniqID, dataRole); err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(model.ResponseHTTP{
 			Status:  constant.ERROR,
 			Message: "Error Create Role",

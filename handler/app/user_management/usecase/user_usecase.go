@@ -7,6 +7,7 @@ import (
 	"api-point-of-sales/util"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/muhammadluth/log"
 )
 
 type UserUsecase struct {
@@ -24,48 +25,27 @@ func NewUserUsecase(iUserManagementMapper user_management.IUserManagementMapper,
 		iValidationUsecase}
 }
 
-func (u *UserUsecase) CreateUser(ctx *fiber.Ctx) error {
-	var (
-		traceId = util.CreateTraceID()
-		request model.RequestCreateUser
-	)
-	if err := ctx.BodyParser(&request); err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(model.ResponseHTTP{
+func (u *UserUsecase) GetUsers(ctx *fiber.Ctx) error {
+	var uniqID = util.CreateUniqID()
+
+	params := new(model.ParamsUsers)
+	if err := ctx.QueryParser(params); err != nil {
+		log.Error(err, uniqID)
+		return ctx.Status(fiber.StatusInternalServerError).JSON(model.ResponseHTTP{
 			Status:  constant.ERROR,
-			Message: "Invalid Request Create User",
+			Message: "Error Query Parameters",
 		})
 	}
 
-	if errValid := u.iValidationUsecase.ValidationCreateUser(traceId, request); errValid != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(model.ResponseHTTP{
-			Status:  constant.ERROR,
-			Message: errValid.Error(),
-		})
-	}
-
-	passwordHash, err := u.iCredentialUsecase.EncryptPassword(request.ConfirmPassword)
+	dataUsers, totalData, err := u.iUserManagementRepo.GetUsersDB(uniqID, *params)
 	if err != nil {
 		return ctx.Status(fiber.StatusInternalServerError).JSON(model.ResponseHTTP{
 			Status:  constant.ERROR,
-			Message: "Error Generate Password",
-		})
-	} else if passwordHash == "" {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.ResponseHTTP{
-			Status:  constant.ERROR,
-			Message: "Error Generate Password",
+			Message: "Error Retrieve Data Role",
 		})
 	}
 
-	dataUser := u.iUserManagementMapper.ToCreateUserPayload(passwordHash, request)
-	if err := u.iUserManagementRepo.InsertUserDB(traceId, dataUser); err != nil {
-		return ctx.Status(fiber.StatusInternalServerError).JSON(model.ResponseHTTP{
-			Status:  constant.ERROR,
-			Message: "Error Create User",
-		})
-	}
-
-	return ctx.JSON(model.ResponseHTTP{
-		Status:  constant.SUCCESS,
-		Message: "Successfully Create User",
-	})
+	response := u.iUserManagementMapper.ToGetUsersPayload(*dataUsers)
+	return ctx.JSON(util.ResponseSuccessWithPagination(float64(totalData), float64(params.Limit),
+		float64(params.Page), response))
 }

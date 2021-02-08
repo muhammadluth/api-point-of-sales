@@ -1,23 +1,20 @@
 package user_management
 
 import (
-	"api-point-of-sales/model"
-
 	"github.com/gofiber/fiber/v2"
 )
 
 type IRoleUsecase interface {
+	GetRoles(ctx *fiber.Ctx) error
 	CreateRole(ctx *fiber.Ctx) error
 }
 
 type IUserUsecase interface {
-	CreateUser(ctx *fiber.Ctx) error
+	GetUsers(ctx *fiber.Ctx) error
 }
 
 type IValidationUsecase interface {
-	ValidationCreateUser(traceId string, request model.RequestCreateUser) error
 }
 
 type ICredentialUsecase interface {
-	EncryptPassword(password string) (string, error)
 }

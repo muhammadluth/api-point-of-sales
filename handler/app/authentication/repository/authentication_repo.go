@@ -17,28 +17,36 @@ func NewAuthenticationRepo(database *pg.DB) authentication.IAuthenticationRepo {
 	return &AuthenticationRepo{database}
 }
 
-func (r *AuthenticationRepo) GetUserByUsername(traceId,
+func (r *AuthenticationRepo) GetUserByUsername(uniqID,
 	account string) (*model.TableUsers, error) {
 	var dataUsers model.TableUsers
 
 	err := r.database.Model(&dataUsers).Where("username = ?", account).
 		Relation("Roles").Select()
 	if err != nil && !strings.Contains(err.Error(), "no rows") {
-		log.Error(err, traceId)
+		log.Error(err, uniqID)
 		return nil, err
 	}
 	return &dataUsers, nil
 }
 
-func (r *AuthenticationRepo) GetUserByEmail(traceId,
+func (r *AuthenticationRepo) GetUserByEmail(uniqID,
 	account string) (*model.TableUsers, error) {
 	var dataUsers model.TableUsers
 
 	err := r.database.Model(&dataUsers).Where("email = ?", account).
 		Relation("Roles").Select()
 	if err != nil && !strings.Contains(err.Error(), "no rows") {
-		log.Error(err, traceId)
+		log.Error(err, uniqID)
 		return nil, err
 	}
 	return &dataUsers, nil
+}
+
+func (r *AuthenticationRepo) InsertUserDB(uniqID string, dataUser model.TableUsers) error {
+	_, err := r.database.Model(&dataUser).Insert()
+	if err != nil {
+		log.Error(err, uniqID)
+	}
+	return err
 }

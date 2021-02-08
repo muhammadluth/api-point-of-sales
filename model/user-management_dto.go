@@ -17,3 +17,15 @@ type (
 		RoleID          string `json:"role_id" xml:"role_id" form:"role_id"`
 	}
 )
+
+type (
+	ResponseGetUsers struct {
+		UserID      string `json:"user_id"`
+		FirstName   string `json:"first_name"`
+		LastName    string `json:"last_name"`
+		Username    string `json:"username"`
+		Email       string `json:"email"`
+		PhoneNumber string `json:"phone_number"`
+		Role        string `json:"role"`
+	}
+)

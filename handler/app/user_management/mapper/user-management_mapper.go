@@ -15,6 +15,18 @@ func NewUserManagementMapper() user_management.IUserManagementMapper {
 	return &UserManagementMapper{}
 }
 
+func (m *UserManagementMapper) ToGetRolePayload(dataRoles []model.TableRoles) *[]model.ResponseDropdown {
+	var response []model.ResponseDropdown
+	for i := range dataRoles {
+		payload := model.ResponseDropdown{
+			Label: strings.Title(dataRoles[i].RoleName),
+			Value: dataRoles[i].RoleID,
+		}
+		response = append(response, payload)
+	}
+	return &response
+}
+
 func (m *UserManagementMapper) ToCreateRolePayload(request model.RequestCreateRole) model.TableRoles {
 	return model.TableRoles{
 		RoleID:      strings.Replace(uuid.New().String(), "-", "", -1),
@@ -23,16 +35,19 @@ func (m *UserManagementMapper) ToCreateRolePayload(request model.RequestCreateRo
 	}
 }
 
-func (m *UserManagementMapper) ToCreateUserPayload(passwordHash string,
-	request model.RequestCreateUser) model.TableUsers {
-	return model.TableUsers{
-		UserID:      strings.Replace(uuid.New().String(), "-", "", -1),
-		FirstName:   strings.Title(request.FirstName),
-		LastName:    strings.Title(request.LastName),
-		Username:    request.Username,
-		Email:       request.Email,
-		PhoneNumber: request.PhoneNumber,
-		Password:    passwordHash,
-		RoleID:      request.RoleID,
+func (m *UserManagementMapper) ToGetUsersPayload(dataUsers []model.TableUsers) *[]model.ResponseGetUsers {
+	var response []model.ResponseGetUsers
+	for i := range dataUsers {
+		payload := model.ResponseGetUsers{
+			UserID:      dataUsers[i].UserID,
+			FirstName:   dataUsers[i].FirstName,
+			LastName:    dataUsers[i].LastName,
+			Username:    dataUsers[i].Username,
+			Email:       dataUsers[i].Email,
+			PhoneNumber: dataUsers[i].PhoneNumber,
+			Role:        dataUsers[i].Roles.RoleName,
+		}
+		response = append(response, payload)
 	}
+	return &response
 }

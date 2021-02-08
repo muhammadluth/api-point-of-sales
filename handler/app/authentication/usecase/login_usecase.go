@@ -26,7 +26,7 @@ func NewLoginUsecase(iAuthenticationMapper authentication.IAuthenticationMapper,
 
 func (u *LoginUsecase) Login(ctx *fiber.Ctx) error {
 	var (
-		traceId  = util.CreateTraceID()
+		uniqID   = util.CreateUniqID()
 		dataUser model.DataUser
 		request  model.RequestLogin
 	)
@@ -36,7 +36,7 @@ func (u *LoginUsecase) Login(ctx *fiber.Ctx) error {
 			Message: "Invalid Request Login",
 		})
 	}
-	email, err := u.iAuthenticationRepo.GetUserByEmail(traceId, request.Account)
+	email, err := u.iAuthenticationRepo.GetUserByEmail(uniqID, request.Account)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(model.ResponseHTTP{
 			Status:  constant.ERROR,
@@ -44,7 +44,7 @@ func (u *LoginUsecase) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	username, err := u.iAuthenticationRepo.GetUserByUsername(traceId, request.Account)
+	username, err := u.iAuthenticationRepo.GetUserByUsername(uniqID, request.Account)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(model.ResponseHTTP{
 			Status:  constant.ERROR,
@@ -89,7 +89,7 @@ func (u *LoginUsecase) Login(ctx *fiber.Ctx) error {
 		}
 	}
 
-	err = u.iCredentialUsecase.VerifyPassword(traceId, request.Password,
+	err = u.iCredentialUsecase.VerifyPassword(uniqID, request.Password,
 		dataUser.Password)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(model.ResponseHTTP{
@@ -98,7 +98,7 @@ func (u *LoginUsecase) Login(ctx *fiber.Ctx) error {
 		})
 	}
 
-	err = u.iTokenUsecase.CreateToken(traceId, dataUser, ctx)
+	err = u.iTokenUsecase.CreateToken(uniqID, dataUser, ctx)
 	if err != nil {
 		return ctx.Status(fiber.StatusUnauthorized).JSON(model.ResponseHTTP{
 			Status:  constant.ERROR,
