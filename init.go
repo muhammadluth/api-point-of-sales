@@ -36,12 +36,14 @@ func RunningApplication() {
 		publicKey)
 	iAuthenticationValidationUsecase := authentication_usecase.NewValidationUsecase(
 		iAuthenticationReferenceRepo)
-	iRegisterUsecase := authentication_usecase.NewRegisterUsecase(iAuthenticationMapper,
-		iAuthenticationRepo, iAuthenticationCredentialUsecase, iAuthenticationValidationUsecase)
 	iTokenUsecase := authentication_usecase.NewTokenUsecase(expireAccessToken, expireRefreshToken,
 		privateKey, publicKey, iAuthenticationMapper)
+	iRegisterUsecase := authentication_usecase.NewRegisterUsecase(iAuthenticationMapper,
+		iAuthenticationRepo, iAuthenticationCredentialUsecase, iAuthenticationValidationUsecase)
 	iLoginUsecase := authentication_usecase.NewLoginUsecase(iAuthenticationMapper,
 		iAuthenticationRepo, iAuthenticationCredentialUsecase, iTokenUsecase)
+	iForgetPasswordUsecase := authentication_usecase.NewForgetPasswordUsecase(iAuthenticationMapper,
+		iAuthenticationRepo, iAuthenticationCredentialUsecase)
 
 	// USER MANAGEMENT
 	iUserManagementMapper := user_management_mapper.NewUserManagementMapper()
@@ -59,8 +61,9 @@ func RunningApplication() {
 
 	// MIDDLEWARE
 	iMiddleWare := middleware.NewMiddleware(iTokenUsecase)
-	iSetupRouter := router.NewSetupRouter(int(properties.PoolSize), iMiddleWare, iRoleUsecase,
-		iUserUsecase, iRegisterUsecase, iLoginUsecase)
+	iSetupRouter := router.NewSetupRouter(properties, iMiddleWare, iRoleUsecase,
+		iUserUsecase, iRegisterUsecase, iLoginUsecase, iForgetPasswordUsecase)
+
 	util.RunningParallel(
 		iSetupRouter.Router,
 	)

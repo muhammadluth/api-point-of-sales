@@ -51,3 +51,15 @@ func (m *UserManagementMapper) ToGetUsersPayload(dataUsers []model.TableUsers) *
 	}
 	return &response
 }
+
+func (m *UserManagementMapper) ToGetUserByIDPayload(dataUser model.TableUsers) *model.ResponseGetUsers {
+	return &model.ResponseGetUsers{
+		UserID:      dataUser.UserID,
+		FirstName:   dataUser.FirstName,
+		LastName:    dataUser.LastName,
+		Username:    dataUser.Username,
+		Email:       dataUser.Email,
+		PhoneNumber: dataUser.PhoneNumber,
+		Role:        dataUser.Roles.RoleName,
+	}
+}

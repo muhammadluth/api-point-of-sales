@@ -32,6 +32,7 @@ func LoadConfig() model.Properties {
 		DBName:             os.Getenv("DB_NAME"),
 		DBUser:             os.Getenv("DB_USER"),
 		DBPassword:         os.Getenv("DB_PASSWORD"),
+		Port:               os.Getenv("PORT"),
 		LogPath:            os.Getenv("LOG_PATH"),
 		PoolSize:           parsePoolSize,
 		PrivateKey:         os.Getenv("PRIVATE_KEY"),

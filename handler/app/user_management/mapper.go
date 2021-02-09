@@ -8,6 +8,7 @@ type IUserManagementMapper interface {
 	ToCreateRolePayload(request model.RequestCreateRole) model.TableRoles
 	//USERS
 	ToGetUsersPayload(dataUsers []model.TableUsers) *[]model.ResponseGetUsers
+	ToGetUserByIDPayload(dataUser model.TableUsers) *model.ResponseGetUsers
 }
 
 type IReferenceMapper interface {

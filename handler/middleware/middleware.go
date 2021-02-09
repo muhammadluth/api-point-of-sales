@@ -48,6 +48,14 @@ func (m *Middleware) AuthMiddleware() func(*fiber.Ctx) error {
 			})
 		}
 
+		splitClaimsSubject := strings.Split(claims.Subject, ":")
+		if len(splitClaimsSubject) != 4 {
+			return ctx.Status(fiber.StatusUnauthorized).JSON(model.ResponseHTTP{
+				Status:  constant.ERROR,
+				Message: "Token Invalid",
+			})
+		}
+
 		if strings.Title(claims.Audience) == strings.Title(constant.ROLE_USER) &&
 			strings.ToUpper(ctx.Method()) != strings.ToUpper(constant.METHOD_GET) {
 			return ctx.Status(fiber.StatusForbidden).JSON(model.ResponseHTTP{
@@ -56,7 +64,8 @@ func (m *Middleware) AuthMiddleware() func(*fiber.Ctx) error {
 			})
 		}
 
-		ctx.Locals("id", claims.Id)
+		ctx.Locals("user_id", splitClaimsSubject[0])
+		ctx.Locals("role", claims.Audience)
 		return ctx.Next()
 	}
 }

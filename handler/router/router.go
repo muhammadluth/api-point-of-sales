@@ -9,53 +9,55 @@ import (
 	"api-point-of-sales/handler/app/authentication"
 	"api-point-of-sales/handler/app/user_management"
 	"api-point-of-sales/handler/middleware"
+	"api-point-of-sales/model"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/muhammadluth/log"
 	"github.com/panjf2000/ants/v2"
 )
 
 type SetupRouter struct {
-	fiberApp         *fiber.App
-	poolConnection   *ants.Pool
-	iMiddleWare      middleware.Middleware
-	iRoleUsecase     user_management.IRoleUsecase
-	iUserUsecase     user_management.IUserUsecase
-	iRegisterUsecase authentication.IRegisterUsecase
-	iLoginUsecase    authentication.ILoginUsecase
+	fiberApp               *fiber.App
+	poolConnection         *ants.Pool
+	properties             model.Properties
+	iMiddleWare            middleware.Middleware
+	iRoleUsecase           user_management.IRoleUsecase
+	iUserUsecase           user_management.IUserUsecase
+	iRegisterUsecase       authentication.IRegisterUsecase
+	iLoginUsecase          authentication.ILoginUsecase
+	iForgetPasswordUsecase authentication.IForgetPasswordUsecase
 }
 
-func NewSetupRouter(poolSize int,
+func NewSetupRouter(properties model.Properties,
 	iMiddleWare middleware.Middleware,
 	iRoleUsecase user_management.IRoleUsecase,
 	iUserUsecase user_management.IUserUsecase,
 	iRegisterUsecase authentication.IRegisterUsecase,
-	iLoginUsecase authentication.ILoginUsecase) handler.ISetupRouter {
+	iLoginUsecase authentication.ILoginUsecase,
+	iForgetPasswordUsecase authentication.IForgetPasswordUsecase) handler.ISetupRouter {
 	fiberApp := fiber.New()
-	poolConnection, _ := ants.NewPool(poolSize)
-	return &SetupRouter{fiberApp, poolConnection, iMiddleWare, iRoleUsecase, iUserUsecase,
-		iRegisterUsecase, iLoginUsecase}
+	poolConnection, _ := ants.NewPool(int(properties.PoolSize))
+	return &SetupRouter{fiberApp, poolConnection, properties, iMiddleWare, iRoleUsecase,
+		iUserUsecase, iRegisterUsecase, iLoginUsecase, iForgetPasswordUsecase}
 }
 
 func (h *SetupRouter) Router(wg *sync.WaitGroup) {
-	addr := flag.String("addr", ":"+"8081", "TCP address to listen to")
+	addr := flag.String("addr", ":"+h.properties.Port, "TCP address to listen to")
 
-	api := h.fiberApp.Group("/api/v1", logger.New())
+	api := h.fiberApp.Group("/api/v1")
 
-	// Auth
 	auth := api.Group("/auth")
 	auth.Post("/login", h.iLoginUsecase.Login)
 	auth.Post("/register", h.iRegisterUsecase.RegisterUser)
+	// auth.Post("/forget-password", h.iRegisterUsecase.RegisterUser)
 
-	// Role
 	role := api.Group("/role")
 	role.Get("/", h.iRoleUsecase.GetRoles)
 	role.Post("/", h.iMiddleWare.AuthMiddleware(), h.iRoleUsecase.CreateRole)
 
-	// User
 	user := api.Group("/user")
 	user.Get("/", h.iMiddleWare.AuthMiddleware(), h.iUserUsecase.GetUsers)
+	user.Get("/:id", h.iMiddleWare.AuthMiddleware(), h.iUserUsecase.GetUserByID)
 
 	// Health Check
 	h.fiberApp.Get("/", func(ctx *fiber.Ctx) error {

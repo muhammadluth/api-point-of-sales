@@ -11,6 +11,7 @@ type IRoleUsecase interface {
 
 type IUserUsecase interface {
 	GetUsers(ctx *fiber.Ctx) error
+	GetUserByID(ctx *fiber.Ctx) error
 }
 
 type IValidationUsecase interface {

@@ -7,6 +7,7 @@ type (
 		DBName             string `json:"db_name"`
 		DBUser             string `json:"db_user"`
 		DBPassword         string `json:"db_password"`
+		Port               string `json:"port"`
 		LogPath            string `json:"log_path"`
 		PoolSize           int    `json:"pool_size"`
 		PrivateKey         string `json:"private_key"`

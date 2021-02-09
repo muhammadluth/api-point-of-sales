@@ -15,6 +15,9 @@ type IRegisterUsecase interface {
 	RegisterUser(ctx *fiber.Ctx) error
 }
 
+type IForgetPasswordUsecase interface {
+}
+
 type IValidationUsecase interface {
 	ValidationRegisterUser(uniqID string, request model.RequestCreateUser) error
 }

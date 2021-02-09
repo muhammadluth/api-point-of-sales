@@ -62,3 +62,14 @@ func (r *UserManagementRepo) GetUsersDB(uniqID string, params model.ParamsUsers)
 	}
 	return &dataUsers, totalData, nil
 }
+
+func (r *UserManagementRepo) GetUserByIDDB(uniqID, paramsID string) (*model.TableUsers, error) {
+	var dataUser model.TableUsers
+
+	err := r.database.Model(&dataUser).Where("user_id = ?", paramsID).Relation("Roles").Select()
+	if err != nil {
+		log.Error(err, uniqID)
+		return nil, err
+	}
+	return &dataUser, nil
+}

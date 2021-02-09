@@ -3,7 +3,9 @@ package usecase
 import (
 	"api-point-of-sales/handler/app/authentication"
 	"api-point-of-sales/model"
+	"api-point-of-sales/util"
 	"crypto/rsa"
+	"encoding/hex"
 	"errors"
 	"strings"
 	"time"
@@ -29,14 +31,38 @@ func NewTokenUsecase(expireAccessToken time.Duration, expireRefreshToken time.Du
 		iAuthenticationMapper}
 }
 
-func (u *TokenUsecase) CreateToken(uniqId string, dataUser model.DataUser, ctx *fiber.Ctx) error {
+func (u *TokenUsecase) CreateToken(uniqID string, dataUser model.DataUser, ctx *fiber.Ctx) error {
 	jwtID, issuer, subject, audiens, issuedAt, expireAccessToken, expireRefreshToken := u.doGeneratePayloadJwt(dataUser, ctx)
-	payloadAccessToken := u.iAuthenticationMapper.ToPayloadToken(jwtID, subject, issuer, audiens, issuedAt, expireAccessToken)
-	payloadRefreshToken := u.iAuthenticationMapper.ToPayloadToken(jwtID, subject, issuer, audiens, issuedAt, expireRefreshToken)
 
-	strAccessToken, strRefreshToken, err := u.doCreateToken(uniqId, payloadAccessToken, payloadRefreshToken)
+	encryptAudiens, err := util.Encrypt(jwtID, audiens)
 	if err != nil {
-		log.Error(err, uniqId)
+		log.Error(err, uniqID)
+		return errors.New("Token Not Generated")
+	}
+	encryptAudiensToString := hex.EncodeToString(encryptAudiens)
+
+	encryptIssuer, err := util.Encrypt(jwtID, issuer)
+	if err != nil {
+		log.Error(err, uniqID)
+		return errors.New("Token Not Generated")
+	}
+	encryptIssuerToString := hex.EncodeToString(encryptIssuer)
+
+	encryptSubject, err := util.Encrypt(jwtID, subject)
+	if err != nil {
+		log.Error(err, uniqID)
+		return errors.New("Token Not Generated")
+	}
+	encryptSubjectToString := hex.EncodeToString(encryptSubject)
+
+	payloadAccessToken := u.iAuthenticationMapper.ToPayloadToken(jwtID, encryptSubjectToString,
+		encryptIssuerToString, encryptAudiensToString, issuedAt, expireAccessToken)
+	payloadRefreshToken := u.iAuthenticationMapper.ToPayloadToken(jwtID, encryptSubjectToString,
+		encryptIssuerToString, encryptAudiensToString, issuedAt, expireRefreshToken)
+
+	strAccessToken, strRefreshToken, err := u.doCreateToken(uniqID, payloadAccessToken, payloadRefreshToken)
+	if err != nil {
+		log.Error(err, uniqID)
 		return err
 	}
 
@@ -53,13 +79,14 @@ func (u *TokenUsecase) CreateToken(uniqId string, dataUser model.DataUser, ctx *
 	return err
 }
 
-func (u *TokenUsecase) CheckToken(uniqId, accessToken string, ctx *fiber.Ctx) (jwt.StandardClaims, int, error) {
+func (u *TokenUsecase) CheckToken(uniqID, accessToken string, ctx *fiber.Ctx) (jwt.StandardClaims, int, error) {
 	claims := new(jwt.StandardClaims)
 	token, err := jwt.ParseWithClaims(accessToken, claims, func(token *jwt.Token) (interface{}, error) {
 		return u.publicKey, nil
 	})
+
 	if err != nil {
-		log.Error(err, uniqId)
+		log.Error(err, uniqID)
 		return *claims, fiber.StatusUnauthorized, err
 	}
 	if token.Valid {
@@ -77,6 +104,28 @@ func (u *TokenUsecase) CheckToken(uniqId, accessToken string, ctx *fiber.Ctx) (j
 	} else {
 		return *claims, fiber.StatusUnauthorized, errors.New("Token Invalid")
 	}
+
+	decryptAudience, err := util.Decrypt(claims.Id, claims.Audience)
+	if err != nil {
+		log.Error(err, uniqID)
+		return *claims, fiber.StatusUnauthorized, errors.New("Token Invalid")
+	}
+
+	decryptIssuer, err := util.Decrypt(claims.Id, claims.Issuer)
+	if err != nil {
+		log.Error(err, uniqID)
+		return *claims, fiber.StatusUnauthorized, errors.New("Token Invalid")
+	}
+
+	decryptSubject, err := util.Decrypt(claims.Id, claims.Subject)
+	if err != nil {
+		log.Error(err, uniqID)
+		return *claims, fiber.StatusUnauthorized, errors.New("Token Invalid")
+	}
+
+	claims.Audience = string(decryptAudience)
+	claims.Issuer = string(decryptIssuer)
+	claims.Subject = string(decryptSubject)
 	return *claims, fiber.StatusOK, nil
 }
 
@@ -93,7 +142,7 @@ func (u *TokenUsecase) doGeneratePayloadJwt(dataUser model.DataUser, ctx *fiber.
 	return jwtID, issuer, subject, audiens, issuedAt, expireAccessToken, expireRefreshToken
 }
 
-func (u *TokenUsecase) doCreateToken(uniqId string, payloadAccessToken,
+func (u *TokenUsecase) doCreateToken(uniqID string, payloadAccessToken,
 	payloadRefreshToken jwt.StandardClaims) (strAccessToken string, strRefreshToken string, err error) {
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodRS256, payloadAccessToken)
 	strAccessToken, err = accessToken.SignedString(u.privateKey)
