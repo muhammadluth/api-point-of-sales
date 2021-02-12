@@ -1,0 +1,9 @@
+version: "3"
+services:
+  api-point-of-sales:
+    build: .
+    image: api-point-of-sales:latest
+    ports:
+      - "8081:8081"
+    volumes:
+      - .env:/app/.env

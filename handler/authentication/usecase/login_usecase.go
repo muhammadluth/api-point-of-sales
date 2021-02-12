@@ -4,6 +4,7 @@ import (
 	"api-point-of-sales/handler/authentication"
 	"api-point-of-sales/model"
 	"api-point-of-sales/model/constant"
+	"api-point-of-sales/util"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -25,7 +26,7 @@ func NewLoginUsecase(iAuthenticationMapper authentication.IAuthenticationMapper,
 
 func (u *LoginUsecase) Login(ctx *fiber.Ctx) error {
 	var (
-		uniqId   = ctx.Locals("uniqId").(string)
+		uniqId   = util.CreateUniqID()
 		dataUser model.DataUser
 		request  model.RequestLogin
 	)
