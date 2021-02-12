@@ -2,28 +2,30 @@ package main
 
 import (
 	"api-point-of-sales/config"
-	"api-point-of-sales/handler/router"
-	"api-point-of-sales/util"
+
+	"api-point-of-sales/app/middleware"
+	"api-point-of-sales/app/router"
+
+	authentication_mapper "api-point-of-sales/handler/authentication/mapper"
+	authentication_repo "api-point-of-sales/handler/authentication/repository"
+	authentication_usecase "api-point-of-sales/handler/authentication/usecase"
+
+	user_management_mapper "api-point-of-sales/handler/user_management/mapper"
+	user_management_repo "api-point-of-sales/handler/user_management/repository"
+	user_management_usecase "api-point-of-sales/handler/user_management/usecase"
 
 	"github.com/muhammadluth/log"
-
-	"api-point-of-sales/handler/middleware"
-
-	authentication_mapper "api-point-of-sales/handler/app/authentication/mapper"
-	authentication_repo "api-point-of-sales/handler/app/authentication/repository"
-	authentication_usecase "api-point-of-sales/handler/app/authentication/usecase"
-
-	user_management_mapper "api-point-of-sales/handler/app/user_management/mapper"
-	user_management_repo "api-point-of-sales/handler/app/user_management/repository"
-	user_management_usecase "api-point-of-sales/handler/app/user_management/usecase"
 )
 
 func RunningApplication() {
 	properties := config.LoadConfig()
 
 	log.SetupLogging(properties.LogPath)
+
 	database := config.ConnectDatabase(properties.DBHost, properties.DBPort, properties.DBUser,
 		properties.DBPassword, properties.DBName)
+
+	timeout := config.ParseTimeDuration(properties.Timeout)
 	expireAccessToken := config.ParseTimeDuration(properties.ExpireAccessToken)
 	expireRefreshToken := config.ParseTimeDuration(properties.ExpireRefreshToken)
 	privateKey, publicKey := config.LoadCredential(properties.PrivateKey, properties.PublicKey)
@@ -60,11 +62,9 @@ func RunningApplication() {
 		iUserManagementRepo, iUserManagementCredentialUsecase, iUserManagementValidationUsecase)
 
 	// MIDDLEWARE
-	iMiddleWare := middleware.NewMiddleware(iTokenUsecase)
-	iSetupRouter := router.NewSetupRouter(properties, iMiddleWare, iRoleUsecase,
+	iMiddleWare := middleware.NewMiddleware(properties, iTokenUsecase)
+	iSetupRouter := router.NewSetupRouter(timeout, properties, iMiddleWare, iRoleUsecase,
 		iUserUsecase, iRegisterUsecase, iLoginUsecase, iForgetPasswordUsecase)
 
-	util.RunningParallel(
-		iSetupRouter.Router,
-	)
+	iSetupRouter.Router()
 }

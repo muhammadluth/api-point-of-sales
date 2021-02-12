@@ -9,6 +9,7 @@ type (
 		DBPassword         string `json:"db_password"`
 		Port               string `json:"port"`
 		LogPath            string `json:"log_path"`
+		Timeout            string `json:"timeout"`
 		PoolSize           int    `json:"pool_size"`
 		PrivateKey         string `json:"private_key"`
 		PublicKey          string `json:"public_key"`

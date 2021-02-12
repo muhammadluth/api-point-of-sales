@@ -34,6 +34,7 @@ func LoadConfig() model.Properties {
 		DBPassword:         os.Getenv("DB_PASSWORD"),
 		Port:               os.Getenv("PORT"),
 		LogPath:            os.Getenv("LOG_PATH"),
+		Timeout:            os.Getenv("TIMEOUT"),
 		PoolSize:           parsePoolSize,
 		PrivateKey:         os.Getenv("PRIVATE_KEY"),
 		PublicKey:          os.Getenv("PUBLIC_KEY"),
